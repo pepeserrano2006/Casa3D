@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Casa3D">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Casa3D</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;background:#f4f5f7;color:#111827;overflow:hidden}
+header{height:64px;background:#111827;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 18px;padding-top:env(safe-area-inset-top)}
+.logo{font-size:20px;font-weight:700}.project{opacity:.7;font-size:14px}
+main{height:calc(100vh - 64px);display:flex}
+aside{width:180px;background:#fff;border-right:1px solid #e5e7eb;padding:12px;overflow:auto}
+button{font:inherit;border:0;border-radius:10px;cursor:pointer}
+.tool{display:block;width:100%;padding:12px 10px;margin:5px 0;text-align:left;background:#f3f4f6;color:#111827}.tool.active{background:#111827;color:white}
+.workspace{flex:1;position:relative;display:flex;flex-direction:column}
+.toolbar{height:48px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:7px;padding:7px 10px}
+.mode{padding:8px 13px;background:#f3f4f6}.mode.active{background:#111827;color:#fff}
+#canvas{flex:1;touch-action:none;background:#fafafa}
+.panel{width:260px;background:#fff;border-left:1px solid #e5e7eb;padding:15px;overflow:auto}
+.card{background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:12px}
+label{display:block;font-size:12px;color:#6b7280;margin:9px 0 4px}
+input{width:100%;padding:9px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+.stat{display:flex;justify-content:space-between;margin:7px 0;font-size:14px}
+.badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#e5e7eb;font-size:12px}
+@media(max-width:800px){aside{width:82px;padding:8px}.tool{font-size:11px;text-align:center;padding:10px 3px}.panel{width:210px}.logo{font-size:18px}}
+</style>
+</head>
+<body>
+<header><div class="logo">⌂ Casa3D</div><div class="project">Mi casa · Guardado local</div></header>
+<main>
+<aside>
+<button class="tool active" data-tool="wall">▱<br>Pared</button>
+<button class="tool" data-tool="room">□<br>Habitación</button>
+<button class="tool" data-tool="door">▯<br>Puerta</button>
+<button class="tool" data-tool="window">▭<br>Ventana</button>
+<button class="tool" data-tool="furniture">⌂<br>Mueble</button>
+<button class="tool" data-tool="stairs">⇧<br>Escalera</button>
+</aside>
+<section class="workspace">
+<div class="toolbar">
+<button class="mode active" data-mode="2d">2D</button><button class="mode" data-mode="3d">3D</button><button class="mode" data-mode="walk">Recorrido</button>
+<span style="margin-left:auto;font-size:13px;color:#6b7280">Toca para dibujar · Shift no necesario</span>
+</div>
+<canvas id="canvas"></canvas>
+</section>
+<aside class="panel">
+<div class="card"><strong>Propiedades</strong><div id="props">Selecciona o crea un elemento.</div></div>
+<div class="card"><strong>Superficies</strong><div class="stat"><span>Útil</span><b id="area">0,00 m²</b></div><div class="stat"><span>Muros</span><b id="walls">0</b></div><div class="stat"><span>Puertas</span><b id="doors">0</b></div><div class="stat"><span>Ventanas</span><b id="windows">0</b></div></div>
+<div class="card"><strong>Presupuesto</strong><div style="font-size:22px;font-weight:700">0 €</div><small style="color:#6b7280">Se calculará con el catálogo.</small></div>
+</aside>
+</main>
+<script>
+const c=document.getElementById('canvas'),ctx=c.getContext('2d');let tool='wall',start=null,walls=[],objects=[],mode='2d';
+const scale=55; // px/m
+function resize(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw()}addEventListener('resize',resize);
+document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));b.classList.add('active');tool=b.dataset.tool;start=null});
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;draw()});
+function p(e){const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+c.addEventListener('pointerdown',e=>{if(mode!=='2d')return;const q=p(e);if(tool==='wall'){if(!start)start=q;else{let dx=q.x-start.x,dy=q.y-start.y;if(Math.hypot(dx,dy)>12){if(Math.abs(dx)>Math.abs(dy))q.y=start.y;else q.x=start.x;walls.push({x1:start.x,y1:start.y,x2:q.x,y2:q.y,thick:.20});start=q;save();draw()}}}else{objects.push({type:tool,x:q.x,y:q.y});save();draw()}});
+function draw(){ctx.clearRect(0,0,c.clientWidth,c.clientHeight);ctx.fillStyle='#fafafa';ctx.fillRect(0,0,c.clientWidth,c.clientHeight);
+ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let x=0;x<c.clientWidth;x+=scale){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.clientHeight);ctx.stroke()}for(let y=0;y<c.clientHeight;y+=scale){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.clientWidth,y);ctx.stroke()}
+walls.forEach(w=>{ctx.strokeStyle='#111827';ctx.lineWidth=Math.max(5,w.thick*scale);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();let m=Math.hypot(w.x2-w.x1,w.y2-w.y1)/scale;ctx.fillStyle='#374151';ctx.font='12px sans-serif';ctx.fillText(m.toFixed(2)+' m',(w.x1+w.x2)/2+5,(w.y1+w.y2)/2-5)});
+objects.forEach(o=>{ctx.fillStyle=o.type==='door'?'#2563eb':o.type==='window'?'#0ea5e9':o.type==='furniture'?'#7c3aed':'#16a34a';ctx.beginPath();ctx.arc(o.x,o.y,10,0,Math.PI*2);ctx.fill()});
+document.getElementById('walls').textContent=walls.length;document.getElementById('doors').textContent=objects.filter(o=>o.type==='door').length;document.getElementById('windows').textContent=objects.filter(o=>o.type==='window').length;
+}
+function save(){localStorage.setItem('casa3d-project',JSON.stringify({version:1,walls,objects}))}
+function load(){try{let d=JSON.parse(localStorage.getItem('casa3d-project'));if(d){walls=d.walls||[];objects=d.objects||[]}}catch(e){}}
+load();resize();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body></html>
