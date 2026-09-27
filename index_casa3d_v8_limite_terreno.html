@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#111827"><title>Casa3D · Home Planner + Presupuesto</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef1f5;color:#172033;overflow:hidden}
+button,input,select{font:inherit}button{min-height:40px;border:1px solid #d4dae4;background:#fff;border-radius:9px;padding:7px 10px;color:#172033;cursor:pointer}button:active{transform:scale(.98)}
+.app{height:100%;display:grid;grid-template-rows:58px 1fr}
+.top{display:flex;align-items:center;gap:7px;padding:7px 10px;background:#111827;color:#fff}
+.brand{font-weight:800;font-size:20px;margin-right:auto}.top button{color:#172033;min-height:40px}.top .active{background:#dbeafe;border-color:#60a5fa}
+.budget-pill{background:#0f766e!important;color:#fff!important;border-color:#14b8a6!important;font-weight:800;white-space:nowrap}
+.body{min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr) 285px}
+.left,.right{background:#f8fafc;overflow:auto;padding:9px;border-right:1px solid #d8dee8}.right{border-right:0;border-left:1px solid #d8dee8}
+.panel-title{font-weight:800;margin:4px 2px 9px}.group{margin-bottom:11px}.group h3{font-size:12px;color:#667085;margin:9px 3px 5px}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tool{text-align:left}.tool.active{background:#dbeafe;border-color:#60a5fa}
+.canvas-wrap{position:relative;min-width:0;min-height:0;background:#fff;overflow:hidden}.canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;background:#fff}
+.hint{position:absolute;left:10px;top:10px;max-width:70%;background:rgba(255,255,255,.94);border:1px solid #d8dee8;border-radius:10px;padding:7px 9px;font-size:12px;pointer-events:none}
+.bottom{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;pointer-events:none}.bottom button{pointer-events:auto}
+.field{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}.field label,.full label{font-size:11px;color:#667085;display:flex;flex-direction:column;gap:3px}
+input,select{min-height:39px;border:1px solid #d4dae4;border-radius:8px;padding:6px;background:#fff;width:100%}
+.card{background:#fff;border:1px solid #dde2ea;border-radius:10px;padding:9px;margin-bottom:8px}.row{display:flex;gap:6px;align-items:center}.row>*{flex:1}
+.small{font-size:11px;color:#667085;line-height:1.4}.big{font-size:18px;font-weight:800}.price{color:#047857;font-weight:800}.danger{color:#b42318}
+.tabs{display:flex;gap:5px;overflow:auto;margin-bottom:7px}.tabs button{white-space:nowrap}.tabs .active{background:#111827;color:#fff}
+.hidden{display:none!important}.list{max-height:230px;overflow:auto}.item{display:flex;justify-content:space-between;gap:5px;padding:7px 0;border-bottom:1px solid #edf0f4;font-size:12px}.item:last-child{border-bottom:0}
+.badge{display:inline-block;padding:2px 6px;border-radius:20px;background:#eef2f6;font-size:10px}.modal{position:absolute;inset:0;background:rgba(15,23,42,.4);display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}
+.modalbox{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:90%;overflow:auto;padding:14px}.toast{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);background:#111827;color:#fff;padding:8px 11px;border-radius:9px;font-size:12px;opacity:0;transition:.2s;pointer-events:none;z-index:30}.toast.show{opacity:1}
+.material-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.material-grid button{text-align:left}.footer-note{font-size:10px;color:#98a2b3;margin-top:8px}
+.budget-card{border:1px solid #b7e4d8;background:#ecfdf5}.budget-total{font-size:25px;font-weight:900;color:#047857;line-height:1.1}.budget-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:7px 0;border-bottom:1px solid #edf0f4}.budget-line:last-child{border-bottom:0}
+.catalog-note{font-size:10px;color:#667085;margin:5px 2px}.muted{color:#667085}
+@media(max-width:900px){.body{grid-template-columns:195px minmax(0,1fr)}.right{display:none}.toolgrid{grid-template-columns:1fr}.top .extra{display:none}}
+@media(max-width:620px){#catalogTop{display:none}.body{grid-template-columns:84px minmax(0,1fr)}.left{padding:5px}.panel-title,.group h3,.tool span.txt{display:none}.toolgrid{gap:4px}.tool{text-align:center;font-size:11px;padding:5px 2px}.top{padding:6px}.brand{font-size:17px}.top button{font-size:11px;padding:5px 6px}.hint{font-size:11px;max-width:80%}.budget-pill{max-width:115px;overflow:hidden;text-overflow:ellipsis}}
+
+/* Catálogo visual */
+.catalog-drawer{position:absolute;left:0;top:0;bottom:0;width:min(430px,92vw);background:#f8fafc;border-right:1px solid #d8dee8;box-shadow:12px 0 30px rgba(15,23,42,.16);z-index:25;display:flex;flex-direction:column;transform:translateX(-102%);transition:transform .22s ease}
+.catalog-drawer.open{transform:translateX(0)}
+.catalog-head{padding:14px 14px 10px;background:#fff;border-bottom:1px solid #e5e7eb}
+.catalog-head-row{display:flex;align-items:center;gap:8px}.catalog-head h2{font-size:18px;margin:0 auto 0 0}
+.catalog-close{min-width:40px}.catalog-search{margin-top:10px}
+.catalog-search input{height:42px;border-radius:11px}
+.catalog-tabs{display:flex;gap:6px;overflow:auto;padding:10px 14px 6px;background:#fff;border-bottom:1px solid #e5e7eb}
+.catalog-tabs button{white-space:nowrap;border-radius:20px;padding:7px 11px;min-height:34px}
+.catalog-tabs button.active{background:#111827;color:#fff;border-color:#111827}
+.catalog-body{overflow:auto;padding:12px}
+.catalog-section-title{display:flex;align-items:end;justify-content:space-between;margin:2px 2px 10px}
+.catalog-section-title b{font-size:13px}.catalog-section-title span{font-size:11px;color:#667085}
+.catalog-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.catalog-item{background:#fff;border:1px solid #dde2ea;border-radius:14px;overflow:hidden;text-align:left;padding:0;min-height:154px;transition:.15s;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.catalog-item:hover{border-color:#93c5fd;box-shadow:0 5px 16px rgba(37,99,235,.10);transform:translateY(-1px)}
+.catalog-item:active{transform:scale(.985)}
+.catalog-thumb{height:88px;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,#f1f5f9,#fff)}
+.catalog-meta{padding:8px 9px 10px}.catalog-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catalog-sub{font-size:10px;color:#667085;margin-top:3px}.catalog-price{font-size:12px;font-weight:900;color:#047857;margin-top:5px}
+.catalog-empty{padding:28px 10px;text-align:center;color:#667085;font-size:12px}
+.catalog-foot{padding:10px 14px;background:#fff;border-top:1px solid #e5e7eb;font-size:10px;color:#667085}
+.catalog-open{width:100%;margin-bottom:8px;background:#fff;border-color:#cbd5e1;font-weight:700}
+.catalog-mini{font-size:10px;color:#667085;margin-top:4px}
+@media(max-width:620px){.catalog-drawer{width:100%}.catalog-grid{grid-template-columns:1fr 1fr}.catalog-item{min-height:145px}}
+
+.catalog-thumb{height:92px;background:linear-gradient(145deg,#f8fafc,#eef2f6);border-bottom:1px solid #edf0f4}.catalog-thumb svg{max-width:92%;height:78px}.catalog-item:hover .catalog-thumb{background:#eef6ff}
+.terrain-modal{position:absolute;inset:0;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
+.terrain-box{width:min(720px,96vw);background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(15,23,42,.28);overflow:hidden}
+.terrain-head{padding:20px 22px 14px}.terrain-head h2{margin:0 0 5px;font-size:24px}.terrain-head p{margin:0;color:#667085;font-size:13px;line-height:1.45}
+.terrain-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 18px}
+.terrain-option{border:2px solid #e4e7ec;border-radius:16px;padding:17px;text-align:left;background:#fff;cursor:pointer;min-height:165px}
+.terrain-option:hover{border-color:#93c5fd;background:#f8fbff}.terrain-option.selected{border-color:#2563eb;background:#eff6ff}
+.terrain-icon{font-size:31px;margin-bottom:8px}.terrain-option h3{margin:0 0 5px;font-size:16px}.terrain-option p{margin:0;color:#667085;font-size:12px;line-height:1.4}
+.terrain-form{padding:0 22px 20px;border-top:1px solid #eef0f3}.terrain-form h3{margin:16px 0 10px}.terrain-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.terrain-fields label{font-size:11px;color:#667085;display:flex;flex-direction:column;gap:4px}
+.terrain-result{margin-top:10px;padding:12px;border-radius:12px;background:#ecfdf5;border:1px solid #b7e4d8}.terrain-result strong{display:block;font-size:20px;color:#047857}
+.terrain-note{font-size:10px;color:#667085;margin-top:8px;line-height:1.4}
+.terrain-actions{display:flex;gap:8px;justify-content:flex-end;padding:14px 22px;background:#f8fafc;border-top:1px solid #eef0f3}
+.terrain-actions button.primary{background:#111827;color:#fff;border-color:#111827}
+.terrain-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;background:#eef2ff;color:#3730a3;font-size:11px;font-weight:700}
+@media(max-width:620px){.terrain-options{grid-template-columns:1fr}.terrain-fields{grid-template-columns:1fr}.terrain-head h2{font-size:20px}}
+
+</style></head>
+<body><div class="app">
+<header class="top"><div class="brand">Casa3D</div><button id="floorBtn">Planta 0</button><button id="view2d" class="active">2D</button><button id="view3d">3D</button><button id="walk">Recorrido</button><button id="catalogTop">🛋️ Catálogo</button><button id="budgetTop" class="budget-pill">💰 0,00 €</button><button id="more" class="extra">Más</button></header>
+<div class="body"><aside class="left"><div class="panel-title">Editor</div>
+<div class="group"><h3>Construcción</h3><div class="toolgrid">
+<button class="tool active" data-tool="select">↖ <span class="txt">Seleccionar</span></button>
+<button class="tool" data-tool="wall">▰ <span class="txt">Pared</span></button>
+<button class="tool" data-tool="room">□ <span class="txt">Habitación</span></button>
+<button class="tool" data-tool="door">🚪 <span class="txt">Puerta</span></button>
+<button class="tool" data-tool="window">▣ <span class="txt">Ventana</span></button>
+<button class="tool" data-tool="stairs">▤ <span class="txt">Escalera</span></button></div></div>
+<div class="group"><h3>Muebles</h3><div class="toolgrid">
+<button class="tool" data-tool="sofa">🛋️ <span class="txt">Sofá</span></button>
+<button class="tool" data-tool="bed">🛏️ <span class="txt">Cama</span></button>
+<button class="tool" data-tool="table">▦ <span class="txt">Mesa</span></button>
+<button class="tool" data-tool="kitchen">🍳 <span class="txt">Cocina</span></button>
+<button class="tool" data-tool="bath">🚿 <span class="txt">Baño</span></button>
+<button class="tool" data-tool="wardrobe">▥ <span class="txt">Armario</span></button></div></div>
+<div class="group"><h3>Exterior</h3><div class="toolgrid">
+<button class="tool" data-tool="pool">▱ <span class="txt">Piscina</span></button>
+<button class="tool" data-tool="terrace">▱ <span class="txt">Terraza</span></button>
+<button class="tool" data-tool="garage">▣ <span class="txt">Garaje</span></button>
+<button class="tool" data-tool="garden">♧ <span class="txt">Jardín</span></button></div></div>
+<div class="group"><h3>Acabados</h3><div class="toolgrid">
+<button class="tool" data-tool="mat-wall">Pared</button><button class="tool" data-tool="mat-floor">Suelo</button>
+<button class="tool" data-tool="mat-roof">Techo</button><button class="tool" data-tool="mat-wood">Madera</button></div></div>
+<div class="group"><h3>Medición</h3><div class="toolgrid"><button class="tool" data-tool="measure">📏 <span class="txt">Cota</span></button><button class="tool" data-tool="guide">⌖ <span class="txt">Guía</span></button></div></div>
+
+<div class="card">
+  <div class="small">Terreno</div>
+  <div id="terrainSummary" style="font-weight:800;margin:4px 0 7px">Sin configurar</div>
+  <button id="editTerrain" style="width:100%">🏠 Configurar terreno</button>
+</div>
+
+<div class="card budget-card"><div class="small">Presupuesto de esta planta</div><div class="budget-total" id="sideBudget">0,00 €</div><button id="openBudget" style="width:100%;margin-top:7px">Ver desglose</button></div>
+</aside>
+<main class="canvas-wrap"><canvas id="canvas" class="canvas"></canvas><div class="hint" id="hint">Seleccionar: toca un elemento para editarlo.</div><div class="bottom"><button id="undo">↶</button><button id="redo">↷</button><button id="save">Guardar</button><button id="clear">Limpiar</button></div><div id="toast" class="toast"></div></main>
+<aside class="right"><div class="panel-title">Propiedades</div><div id="props"></div></aside></div></div>
+
+
+<div id="terrainModal" class="terrain-modal hidden">
+  <div class="terrain-box">
+    <div class="terrain-head">
+      <h2>¿Tienes ya el terreno?</h2>
+      <p>Antes de diseñar la casa, elige cómo quieres calcular la parcela. Puedes cambiarlo después desde “Configurar terreno”.</p>
+    </div>
+    <div class="terrain-options">
+      <button class="terrain-option" id="terrainBuy">
+        <div class="terrain-icon">🏗️</div><h3>Quiero comprar una parcela</h3>
+        <p>Indica los metros cuadrados que quieres. Casa3D calculará el coste usando la referencia media del suelo urbano de la Región de Murcia.</p>
+      </button>
+      <button class="terrain-option" id="terrainOwn">
+        <div class="terrain-icon">📐</div><h3>Ya tengo terreno</h3>
+        <p>Indica las dimensiones de tu parcela. No se añade ningún coste de compra al presupuesto.</p>
+      </button>
+    </div>
+    <div class="terrain-form" id="terrainForm"></div>
+    <div class="terrain-actions">
+      <button id="terrainCancel">Cancelar</button>
+      <button id="terrainSave" class="primary">Guardar terreno</button>
+    </div>
+  </div>
+</div>
+
+<div id="catalogDrawer" class="catalog-drawer" aria-hidden="true">
+  <div class="catalog-head">
+    <div class="catalog-head-row">
+      <h2>Catálogo</h2>
+      <button id="catalogClose" class="catalog-close">✕</button>
+    </div>
+    <div class="catalog-search"><input id="catalogSearch" placeholder="Buscar sofá, cama, cocina..." autocomplete="off"></div>
+  </div>
+  <div class="catalog-tabs" id="catalogTabs"></div>
+  <div class="catalog-body" id="catalogBody"></div>
+  <div class="catalog-foot">Toca una tarjeta para colocarla en el plano. El precio mostrado entra automáticamente en el presupuesto.</div>
+</div>
+
+<div id="modal" class="modal hidden"><div class="modalbox" id="modalbox"></div></div>
+<script>
+(()=>{
+const c=document.getElementById('canvas'),ctx=c.getContext('2d'),props=document.getElementById('props'),
+hint=document.getElementById('hint'),toast=document.getElementById('toast'),modal=document.getElementById('modal'),modalbox=document.getElementById('modalbox');
+let dpr=1,view='2d',tool='select',drag=null,selected=null,history=[],future=[],scale=45,offset={x:70,y:70},floor=0;
+const key='casa3d-v4-project';
+const DEFAULT_PRICES={
+wall:55,floor:35,roof:45,wood:80,
+door:250,window:180,stairs:2200,sofa:750,bed:500,table:220,kitchen:6500,bath:4200,wardrobe:900,
+pool:12000,terrace:90,garage:7500,garden:35
+};
+const CATALOG={
+wall:{label:'Pared',unit:'m',price:55,mode:'length'},room:{label:'Habitación',unit:'m²',price:35,mode:'area'},
+door:{label:'Puerta',unit:'ud',price:250,mode:'count'},window:{label:'Ventana',unit:'ud',price:180,mode:'count'},
+stairs:{label:'Escalera',unit:'ud',price:2200,mode:'count'},sofa:{label:'Sofá',unit:'ud',price:750,mode:'count'},
+bed:{label:'Cama',unit:'ud',price:500,mode:'count'},table:{label:'Mesa',unit:'ud',price:220,mode:'count'},
+kitchen:{label:'Cocina',unit:'ud',price:6500,mode:'count'},bath:{label:'Baño',unit:'ud',price:4200,mode:'count'},
+wardrobe:{label:'Armario',unit:'ud',price:900,mode:'count'},pool:{label:'Piscina',unit:'ud',price:12000,mode:'count'},
+terrace:{label:'Terraza',unit:'m²',price:90,mode:'area'},garage:{label:'Garaje',unit:'ud',price:7500,mode:'count'},
+garden:{label:'Jardín',unit:'m²',price:35,mode:'area'}
+};
+const TYPES=Object.fromEntries(Object.entries(CATALOG).map(([k,v])=>[k,v.label]));
+Object.assign(TYPES,{measure:'Cota',guide:'Guía'});
+function cur(){return project.floors[floor].objects}
+function snapM(v){let s=project.settings.snap;return Math.round(v/s)*s}
+function resize(){dpr=Math.min(devicePixelRatio||1,2);let r=c.getBoundingClientRect();c.width=Math.max(1,r.width*dpr);c.height=Math.max(1,r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
+function p2s(p){return{x:p.x*scale+offset.x,y:p.y*scale+offset.y}}
+function s2p(e){let r=c.getBoundingClientRect();return{x:(e.clientX-r.left-offset.x)/scale,y:(e.clientY-r.top-offset.y)/scale}}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function saveHist(){history.push(JSON.stringify(project));if(history.length>40)history.shift();future=[]}
+function persist(){localStorage.setItem(key,JSON.stringify(project))}
+function toastMsg(t){toast.textContent=t;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1300)}
+function roomArea(o){return Math.abs((o.w||0)*(o.h||0))}
+function wallLen(o){return Math.hypot(o.x2-o.x1,o.y2-o.y1)}
+function bounds(){let xs=[],ys=[];cur().forEach(o=>{if(o.x!=null){xs.push(o.x,o.x+(o.w||0));ys.push(o.y,o.y+(o.h||0))}if(o.x1!=null){xs.push(o.x1,o.x2);ys.push(o.y1,o.y2)}});return xs.length?{minx:Math.min(...xs),maxx:Math.max(...xs),miny:Math.min(...ys),maxy:Math.max(...ys)}:{minx:0,maxx:10,miny:0,maxy:8}}
+function setupView(){let b=bounds(),w=b.maxx-b.minx||10,h=b.maxy-b.miny||8,r=c.getBoundingClientRect();scale=Math.min((r.width-60)/Math.max(w,8),(r.height-60)/Math.max(h,6),70);offset.x=(r.width-w*scale)/2-b.minx*scale;offset.y=(r.height-h*scale)/2-b.miny*scale}
+function drawGrid(){ctx.save();ctx.fillStyle='#fff';ctx.fillRect(0,0,c.clientWidth,c.clientHeight);let step=scale;ctx.strokeStyle='#e7ebf1';ctx.lineWidth=1;for(let x=((offset.x%step)+step)%step;x<c.clientWidth;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.clientHeight);ctx.stroke()}for(let y=((offset.y%step)+step)%step;y<c.clientHeight;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.clientWidth,y);ctx.stroke()}ctx.restore()}
+function draw2d(){setupView();drawGrid();
+ const tb=terrainBounds();
+ if(tb){
+   const a=p2s({x:tb.minx,y:tb.miny});
+   ctx.save();
+   ctx.fillStyle='rgba(34,197,94,.055)';
+   ctx.fillRect(a.x,a.y,tb.w*scale,tb.h*scale);
+   ctx.strokeStyle='#16a34a';
+   ctx.lineWidth=3;
+   ctx.setLineDash([10,6]);
+   ctx.strokeRect(a.x,a.y,tb.w*scale,tb.h*scale);
+   ctx.setLineDash([]);
+   ctx.fillStyle='#166534';
+   ctx.font='12px sans-serif';
+   ctx.fillText(`Parcela · ${tb.w.toFixed(2)} × ${tb.h.toFixed(2)} m`,a.x+8,a.y+18);
+   ctx.restore();
+ }
+ cur().forEach(o=>{let sel=o.id===selected;ctx.save();
+ if(o.type==='wall'){let a=p2s({x:o.x1,y:o.y1}),b=p2s({x:o.x2,y:o.y2});ctx.strokeStyle=sel?'#2563eb':'#374151';ctx.lineWidth=Math.max(4,(o.thickness||.2)*scale);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();let len=wallLen(o);if(len>.6){ctx.fillStyle='#475467';ctx.font='11px sans-serif';ctx.fillText(len.toFixed(2)+' m',(a.x+b.x)/2+4,(a.y+b.y)/2-5)}}
+ else if(o.type==='room'||['pool','terrace','garage','garden'].includes(o.type)){let a=p2s({x:o.x,y:o.y});ctx.fillStyle=o.type==='pool'?'#cfe8f5':o.type==='garden'?'#dcefd8':o.type==='terrace'?'#eee8dd':o.type==='garage'?'#e5e7eb':'rgba(59,130,246,.08)';ctx.fillRect(a.x,a.y,o.w*scale,o.h*scale);ctx.strokeStyle=sel?'#2563eb':'#64748b';ctx.lineWidth=sel?3:1.5;ctx.strokeRect(a.x,a.y,o.w*scale,o.h*scale);ctx.fillStyle='#344054';ctx.font='12px sans-serif';ctx.fillText(o.name||TYPES[o.type],a.x+6,a.y+16);if(o.type==='room'||['terrace','garden'].includes(o.type))ctx.fillText(roomArea(o).toFixed(2)+' m²',a.x+6,a.y+32)}
+ else if(o.type==='door'||o.type==='window'){let a=p2s({x:o.x,y:o.y});ctx.strokeStyle=o.type==='door'?'#2563eb':'#16a34a';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(a.x-(o.w||.8)*scale/2,a.y);ctx.lineTo(a.x+(o.w||.8)*scale/2,a.y);ctx.stroke()}
+ else if(o.type==='measure'||o.type==='guide'){let a=p2s({x:o.x1,y:o.y1}),b=p2s({x:o.x2,y:o.y2});ctx.strokeStyle=o.type==='measure'?'#f59e0b':'#94a3b8';ctx.setLineDash([5,4]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);if(o.type==='measure'){ctx.fillStyle='#92400e';ctx.font='11px sans-serif';ctx.fillText(Math.hypot(o.x2-o.x1,o.y2-o.y1).toFixed(2)+' m',(a.x+b.x)/2+4,(a.y+b.y)/2-4)}}
+ else{let a=p2s({x:o.x,y:o.y}),w=o.w||1,h=o.h||1;ctx.fillStyle=o.type==='stairs'?'#d1d5db':o.type==='kitchen'?'#f3e8d0':o.type==='bath'?'#dbeafe':o.type==='bed'?'#f5d0d0':o.type==='sofa'?'#ddd6fe':'#e5e7eb';ctx.save();ctx.translate(a.x,a.y);ctx.rotate((o.rotation||0)*Math.PI/180);ctx.fillRect(-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.strokeStyle=sel?'#2563eb':'#667085';ctx.lineWidth=1.5;ctx.strokeRect(-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.rotate(-(o.rotation||0)*Math.PI/180);ctx.fillStyle='#344054';ctx.font='10px sans-serif';ctx.fillText(TYPES[o.type]||o.type,-w*scale/2+3,3);ctx.restore()}
+ ctx.restore()})}
+function draw3d(){ctx.fillStyle='#eef1f5';ctx.fillRect(0,0,c.clientWidth,c.clientHeight);let b=bounds(),ox=c.clientWidth/2,oy=c.clientHeight*.62,s=Math.min(c.clientWidth/(b.maxx-b.minx+10),c.clientHeight/(b.maxy-b.miny+7))*.7;function iso(x,y,z){return{x:ox+(x-y)*s,y:oy+(x+y)*s*.48-z*s}}
+cur().forEach(o=>{if(o.type==='room'||['pool','terrace','garage','garden'].includes(o.type)){let a=iso(o.x,o.y,0),b1=iso(o.x+o.w,o.y,0),c1=iso(o.x+o.w,o.y+o.h,0),d=iso(o.x,o.y+o.h,0);ctx.fillStyle=o.type==='pool'?'#9fd4eb':o.type==='garden'?'#b9d8ae':'#ddd6c9';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b1.x,b1.y);ctx.lineTo(c1.x,c1.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.strokeStyle='#64748b';ctx.stroke()}
+if(o.type==='wall'){let h=o.height||2.7,a=iso(o.x1,o.y1,0),b1=iso(o.x2,o.y2,0),c1=iso(o.x2,o.y2,h),d=iso(o.x1,o.y1,h);ctx.fillStyle=project.materials.wall;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b1.x,b1.y);ctx.lineTo(c1.x,c1.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.strokeStyle='#6b7280';ctx.stroke()}})
+cur().filter(o=>!['wall','room','pool','terrace','garage','garden','door','window','measure','guide'].includes(o.type)).forEach(o=>{let q=iso(o.x,o.y,.5),w=(o.w||1)*s*.5;ctx.fillStyle='#b8b0a6';ctx.fillRect(q.x-w/2,q.y-w/2,w,w*.6)});ctx.fillStyle='#344054';ctx.font='13px sans-serif';ctx.fillText('Vista 3D · Planta '+floor,15,22)}
+function draw(){view==='2d'?draw2d():draw3d()}
+function setTool(t){tool=t;document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));const m={select:'Seleccionar: toca un elemento para editarlo.',wall:'Pared: arrastra y suelta. Se ajusta a la cuadrícula.',room:'Habitación: arrastra un rectángulo.',door:'Puerta: toca para colocarla.',window:'Ventana: toca para colocarla.',stairs:'Escalera: toca para colocarla.',measure:'Cota: arrastra para medir.',guide:'Guía: arrastra una línea.'};hint.textContent=m[t]||'Toca para colocar '+(TYPES[t]||'objeto')+'.'}
+function hit(p){let best=null,bd=Infinity;cur().forEach(o=>{let d=Infinity;if(o.x!=null)d=Math.hypot(p.x-o.x,p.y-o.y)/(Math.max(o.w||.5,o.h||.5));if(o.x1!=null){let A={x:o.x1,y:o.y1},B={x:o.x2,y:o.y2},vx=B.x-A.x,vy=B.y-A.y,t=((p.x-A.x)*vx+(p.y-A.y)*vy)/(vx*vx+vy*vy||1);t=Math.max(0,Math.min(1,t));d=Math.hypot(p.x-(A.x+t*vx),p.y-(A.y+t*vy))}if(d<bd&&d<.45){bd=d;best=o.id}});return best}
+function newObj(t,p){let base={id:uid(),type:t,x:snapM(p.x),y:snapM(p.y),w:1,h:1,rotation:0,quantity:1};
+if(t==='door'){base.w=.8;base.h=.1}else if(t==='window'){base.w=1.2;base.h=.1}else if(t==='sofa'){base.w=2;base.h=.9}else if(t==='bed'){base.w=1.6;base.h=2}else if(t==='table'){base.w=1.2;base.h=1.2}else if(t==='kitchen'){base.w=2.8;base.h=.65}else if(t==='bath'){base.w=1.7;base.h=1.7}else if(t==='wardrobe'){base.w=1.8;base.h=.6}else if(t==='stairs'){base.w=1.1;base.h=2.8}else if(t==='pool'){base.w=5;base.h=3}else if(t==='terrace'){base.w=4;base.h=2.5}else if(t==='garage'){base.w=3;base.h=5}else if(t==='garden'){base.w=5;base.h=4};return base}
+function pointerDown(e){e.preventDefault();let p=s2p(e);if(view!=='2d')return;
+ if(tool==='select'){selected=hit(p);showProps();draw();return}
+ const tb=terrainBounds();
+ if(tb && !pointInTerrain(p)){toastMsg('No puedes salirte del terreno');return}
+ c.setPointerCapture(e.pointerId);
+ if(['wall','room','measure','guide'].includes(tool)){
+   const q=clampDragPoint(p);
+   drag={x1:q.x,y1:q.y,x2:q.x,y2:q.y};
+ }else{
+   let o=newObj(tool,p);
+   if(!objectFitsTerrain(o)){toastMsg('Ese elemento no cabe dentro del terreno');return}
+   saveHist();cur().push(o);selected=o.id;showProps();persist();updateBudget();draw()
+ }
+}
+function pointerMove(e){if(!drag)return;e.preventDefault();let p=s2p(e);let q=clampDragPoint(p);drag.x2=q.x;drag.y2=q.y;draw();let a=p2s({x:drag.x1,y:drag.y1}),b=p2s({x:drag.x2,y:drag.y2});ctx.save();ctx.strokeStyle='#2563eb';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}
+function pointerUp(e){if(!drag)return;e.preventDefault();let d=drag;drag=null;saveHist();let o;
+ if(tool==='wall')o={id:uid(),type:'wall',x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2,thickness:.2,height:project.floors[floor].height,quantity:1};
+ else if(tool==='room')o={id:uid(),type:'room',x:Math.min(d.x1,d.x2),y:Math.min(d.y1,d.y2),w:Math.abs(d.x2-d.x1),h:Math.abs(d.y2-d.y1),name:'Habitación',quantity:1};
+ else o={id:uid(),type:tool,x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2};
+ if(Math.abs(d.x2-d.x1)+Math.abs(d.y2-d.y1)<.15&&tool!=='guide')return;
+ if(!objectFitsTerrain(o)){toastMsg('No puedes salirte del terreno');return}
+ cur().push(o);selected=o.id;persist();showProps();updateBudget();draw()}
+function propInput(label,key,val,step='.1'){return `<label>${label}<input data-key="${key}" type="number" step="${step}" value="${val??''}"></label>`}
+function money(n){return Number(n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function getUnitAmount(o){if(!CATALOG[o.type])return 0;let mode=CATALOG[o.type].mode;if(mode==='length')return wallLen(o)*(o.quantity||1);if(mode==='area')return roomArea(o)*(o.quantity||1);return o.quantity||1}
+function getPrice(o){return project.prices[o.type]??CATALOG[o.type]?.price??0}
+function objectCost(o){return getUnitAmount(o)*getPrice(o)}
+function calcBudget(){let lines=[],total=terrainCost();if(terrainCost()>0)lines.push({id:'terrain',type:'terrain',label:'Parcela',amount:Number(project.terrain.area||0),unit:'m²',price:Number(project.terrain.pricePerM2||MURCIA_LAND_REFERENCE),cost:terrainCost()});cur().forEach(o=>{if(!CATALOG[o.type])return;let amount=getUnitAmount(o),unit=CATALOG[o.type].unit,cost=objectCost(o);total+=cost;lines.push({id:o.id,type:o.type,label:TYPES[o.type],amount,unit,price:getPrice(o),cost})});return{lines,total}}
+function updateBudget(){let b=calcBudget();document.getElementById('budgetTop').textContent='💰 '+money(b.total);document.getElementById('sideBudget').textContent=money(b.total)}
+function showProps(){let o=cur().find(a=>a.id===selected);if(!o){let b=calcBudget(),rooms=cur().filter(a=>a.type==='room').reduce((s,a)=>s+roomArea(a),0),walls=cur().filter(a=>a.type==='wall').reduce((s,a)=>s+wallLen(a),0);props.innerHTML=`<div class="card"><div class="big">${project.name}</div><div class="small">${terrainLabel()} · ${cur().length} elementos · ${rooms.toFixed(2)} m² · ${walls.toFixed(2)} m de muros</div></div><div class="card budget-card"><div class="small">Total de esta planta</div><div class="budget-total">${money(b.total)}</div><button id="budget" style="width:100%;margin-top:7px">💰 Abrir presupuesto</button></div><div class="card"><div class="row"><button id="terrain">Terreno</button><button id="floors">Plantas</button><button id="export">Exportar</button></div><div class="row"><button id="import">Importar</button><button id="prices">Precios</button></div></div>`;bindGeneral();return}
+let html=`<div class="card"><div class="big">${TYPES[o.type]||o.type}</div><div class="small">Elemento seleccionado</div></div>`;
+if(CATALOG[o.type]){let amount=getUnitAmount(o),price=getPrice(o);html+=`<div class="card budget-card"><div class="small">Coste del elemento</div><div class="budget-total">${money(amount*price)}</div><div class="small">${amount.toFixed(2)} ${CATALOG[o.type].unit} × ${money(price)}/${CATALOG[o.type].unit}</div></div>`}
+if(o.type==='wall'){html+=`<div class="field">${propInput('Grosor (m)','thickness',o.thickness,.05)}${propInput('Altura (m)','height',o.height,.1)}</div><div class="field">${propInput('X1','x1',o.x1,.05)}${propInput('Y1','y1',o.y1,.05)}</div><div class="field">${propInput('X2','x2',o.x2,.05)}${propInput('Y2','y2',o.y2,.05)}</div>`}
+else if(o.type==='room'||['pool','terrace','garage','garden'].includes(o.type)){html+=`<div class="full"><label>Nombre<input data-key="name" value="${o.name||TYPES[o.type]||''}"></label></div><div class="field">${propInput('X','x',o.x,.05)}${propInput('Y','y',o.y,.05)}</div><div class="field">${propInput('Ancho (m)','w',o.w,.1)}${propInput('Fondo (m)','h',o.h,.1)}</div>`}
+else if(o.x!=null){html+=`<div class="field">${propInput('X','x',o.x,.05)}${propInput('Y','y',o.y,.05)}</div><div class="field">${propInput('Ancho','w',o.w,.1)}${propInput('Fondo','h',o.h,.1)}</div>${propInput('Rotación','rotation',o.rotation||0,5)}`}
+else if(o.x1!=null){html+=`<div class="field">${propInput('X1','x1',o.x1,.05)}${propInput('Y1','y1',o.y1,.05)}</div><div class="field">${propInput('X2','x2',o.x2,.05)}${propInput('Y2','y2',o.y2,.05)}</div>`}
+if(CATALOG[o.type])html+=`<div class="field">${propInput('Cantidad','quantity',o.quantity||1,1)}${propInput('Precio unitario €','unitPrice',getPrice(o),1)}</div>`;
+html+=`<div class="row"><button id="duplicate">Duplicar</button><button id="delete" class="danger">Eliminar</button></div>`;
+props.innerHTML=html;
+props.querySelectorAll('input[data-key]').forEach(inp=>inp.onchange=()=>{
+ const before=clone(o);
+ saveHist();
+ let k=inp.dataset.key;
+ if(k==='name')o[k]=inp.value;
+ else if(k==='unitPrice'){project.prices[o.type]=Math.max(0,parseFloat(inp.value)||0)}
+ else{o[k]=Math.max(0,parseFloat(inp.value)||0)}
+ if(k!=='name'&&k!=='unitPrice'&&!objectFitsTerrain(o)){Object.assign(o,before);history.pop();toastMsg('Las medidas deben quedar dentro del terreno');}
+ persist();draw();showProps();updateBudget()
+});
+document.getElementById('delete').onclick=()=>{saveHist();project.floors[floor].objects=cur().filter(a=>a.id!==o.id);selected=null;persist();showProps();updateBudget();draw()};
+document.getElementById('duplicate').onclick=()=>{
+ let n=clone(o);n.id=uid();if(n.x!=null)n.x+=.5;if(n.x1!=null){n.x1+=.5;n.x2+=.5}
+ if(!objectFitsTerrain(n)){toastMsg('No hay espacio para duplicarlo dentro del terreno');return}
+ saveHist();cur().push(n);selected=n.id;persist();showProps();updateBudget();draw()
+}
+}
+function bindGeneral(){document.getElementById('terrain').onclick=terrainOpen;document.getElementById('floors').onclick=showFloors;document.getElementById('budget').onclick=showBudget;document.getElementById('export').onclick=exportJSON;document.getElementById('import').onclick=importJSON;document.getElementById('prices').onclick=showPrices}
+function showFloors(){modal.classList.remove('hidden');modalbox.innerHTML=`<h2>Plantas</h2><div class="list">${project.floors.map((f,i)=>`<div class="item"><span>${i} · ${f.name}</span><button data-floor="${i}">Abrir</button></div>`).join('')}</div><div class="row"><button id="addFloor">+ Añadir planta</button><button id="close">Cerrar</button></div>`;modalbox.querySelectorAll('[data-floor]').forEach(b=>b.onclick=()=>{floor=+b.dataset.floor;modal.classList.add('hidden');document.getElementById('floorBtn').textContent=project.floors[floor].name;selected=null;showProps();updateBudget();draw()});document.getElementById('addFloor').onclick=()=>{saveHist();project.floors.push({name:'Planta '+project.floors.length,height:2.7,objects:[]});persist();showFloors()};document.getElementById('close').onclick=()=>modal.classList.add('hidden')}
+function showBudget(){let b=calcBudget();modal.classList.remove('hidden');let grouped={};b.lines.forEach(l=>{(grouped[l.label]??=[]).push(l)});modalbox.innerHTML=`<h2>💰 Presupuesto de la casa</h2><div class="small"><span class="terrain-pill">${terrainLabel()}</span><br>Los precios son editables y sirven como estimación. El cálculo se actualiza al añadir, eliminar o modificar elementos.</div><div class="card budget-card"><div class="small">TOTAL · ${project.floors[floor].name}</div><div class="budget-total">${money(b.total)}</div></div><div class="list">${b.lines.map(l=>`<div class="budget-line"><div><b>${l.label}</b><div class="small">${l.amount.toFixed(2)} ${l.unit} × ${money(l.price)}/${l.unit}</div></div><b class="price">${money(l.cost)}</b></div>`).join('')||'<p class="muted">Añade paredes, habitaciones o elementos para empezar el presupuesto.</p>'}</div><div class="row" style="margin-top:10px"><button id="prices">⚙️ Editar precios</button><button id="close">Cerrar</button></div>`;document.getElementById('prices').onclick=showPrices;document.getElementById('close').onclick=()=>modal.classList.add('hidden')}
+function showPrices(){modal.classList.remove('hidden');let keys=Object.keys(CATALOG);modalbox.innerHTML=`<h2>Precios del catálogo</h2><div class="small">Puedes adaptar estos precios a tus proveedores o a tus estimaciones.</div><div class="list">${keys.map(k=>`<div class="field"><label>${CATALOG[k].label} (€/${CATALOG[k].unit})<input data-price="${k}" type="number" min="0" step="1" value="${getPrice({type:k})}"></label></div>`).join('')}</div><div class="row"><button id="savePrices">Guardar precios</button><button id="close">Cancelar</button></div>`;document.getElementById('savePrices').onclick=()=>{modalbox.querySelectorAll('[data-price]').forEach(i=>project.prices[i.dataset.price]=Math.max(0,parseFloat(i.value)||0));persist();modal.classList.add('hidden');showProps();updateBudget();toastMsg('Precios actualizados')};document.getElementById('close').onclick=()=>modal.classList.add('hidden')}
+function exportJSON(){let blob=new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='casa3d-proyecto.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function importJSON(){let input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=()=>{let f=input.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{saveHist();project=JSON.parse(r.result);floor=0;project.prices={...DEFAULT_PRICES,...(project.prices||{})};persist();showProps();updateBudget();draw();toastMsg('Proyecto importado')}catch(e){toastMsg('Archivo no válido')}};r.readAsText(f)};input.click()}
+function saveNow(){persist();toastMsg('Proyecto guardado')}
+function undo(){if(!history.length)return;future.push(JSON.stringify(project));project=JSON.parse(history.pop());floor=Math.min(floor,project.floors.length-1);persist();selected=null;showProps();updateBudget();draw()}
+function redo(){if(!future.length)return;history.push(JSON.stringify(project));project=JSON.parse(future.pop());floor=Math.min(floor,project.floors.length-1);persist();selected=null;showProps();updateBudget();draw()}
+function clearAll(){saveHist();cur().length=0;selected=null;persist();showProps();updateBudget();draw()}
+function defaultProject(){return{name:'Mi casa',floors:[{name:'Planta 0',height:2.7,objects:[]}],materials:{wall:'#d9d3c7',floor:'#e8e2d6',roof:'#c6c0b8',wood:'#b8895a'},prices:{...DEFAULT_PRICES},settings:{snap:.25},terrain:{mode:null,area:0,width:0,length:0,pricePerM2:MURCIA_LAND_REFERENCE}}}
+let project=defaultProject();
+function load(){try{let a=JSON.parse(localStorage.getItem(key)||'null');if(a&&a.floors){project={...defaultProject(),...a,prices:{...DEFAULT_PRICES,...(a.prices||{})},terrain:a.terrain||{mode:null,area:0,width:0,length:0,pricePerM2:MURCIA_LAND_REFERENCE}}}}catch(e){}}
+
+
+const MURCIA_LAND_REFERENCE=201.8;
+let terrainDraft=null;
+function terrainOpen(){
+ const m=document.getElementById('terrainModal');
+ m.classList.remove('hidden');
+ terrainDraft=JSON.parse(JSON.stringify(project.terrain||{mode:null,area:0,width:0,length:0,pricePerM2:MURCIA_LAND_REFERENCE}));
+ terrainRender();
+}
+function terrainClose(){document.getElementById('terrainModal').classList.add('hidden')}
+function terrainRender(){
+ const f=document.getElementById('terrainForm'), t=terrainDraft;
+ document.getElementById('terrainBuy').classList.toggle('selected',t.mode==='buy');
+ document.getElementById('terrainOwn').classList.toggle('selected',t.mode==='own');
+ if(!t.mode){f.innerHTML='<div class="terrain-note">Selecciona una de las dos opciones para continuar.</div>';return}
+ if(t.mode==='buy'){
+   const area=Number(t.area||0),cost=area*MURCIA_LAND_REFERENCE;
+   f.innerHTML=`<h3>Parcela para comprar</h3>
+   <div class="terrain-fields"><label>Superficie deseada (m²)<input id="terrainArea" type="number" min="1" step="1" value="${area||150}"></label>
+   <label>Referencia media<input value="${MURCIA_LAND_REFERENCE.toLocaleString('es-ES',{minimumFractionDigits:1})} €/m²" disabled></label></div>
+   <div class="terrain-result">Coste estimado de la parcela<strong>${money(cost)}</strong></div>
+   <div class="terrain-note">Referencia: precio medio del m² de suelo urbano en la Región de Murcia, II trimestre de 2026 (CREM). Es una referencia estadística; el precio real depende de municipio, clasificación, ubicación, edificabilidad, servicios y otras condiciones.<br><strong>Límite del editor:</strong> para dibujar la parcela se representa el área como un cuadrado equivalente.</div>`;
+   document.getElementById('terrainArea').oninput=e=>{terrainDraft.area=Math.max(0,parseFloat(e.target.value)||0);terrainRender()};
+ }else{
+   f.innerHTML=`<h3>Mi terreno</h3>
+   <div class="terrain-fields"><label>Ancho de la parcela (m)<input id="terrainWidth" type="number" min="1" step=".1" value="${t.width||10}"></label>
+   <label>Largo de la parcela (m)<input id="terrainLength" type="number" min="1" step=".1" value="${t.length||20}"></label></div>
+   <div class="terrain-result">Superficie disponible<strong>${(Number(t.width||0)*Number(t.length||0)).toFixed(2)} m²</strong></div>
+   <div class="terrain-note">Al seleccionar terreno propio, el coste de compra de la parcela es 0 €. Las dimensiones quedan guardadas para ayudarte a plantear la casa dentro del terreno.</div>`;
+   document.getElementById('terrainWidth').oninput=e=>{terrainDraft.width=Math.max(0,parseFloat(e.target.value)||0);terrainRender()};
+   document.getElementById('terrainLength').oninput=e=>{terrainDraft.length=Math.max(0,parseFloat(e.target.value)||0);terrainRender()};
+ }
+}
+function terrainCost(){
+ const t=project.terrain||{};
+ return t.mode==='buy' ? Number(t.area||0)*Number(t.pricePerM2||MURCIA_LAND_REFERENCE) : 0;
+}
+function terrainLabel(){
+ const t=project.terrain||{};
+ if(t.mode==='buy')return `Compra · ${Number(t.area||0).toLocaleString('es-ES')} m²`;
+ if(t.mode==='own')return `Propio · ${Number(t.width||0).toLocaleString('es-ES')} × ${Number(t.length||0).toLocaleString('es-ES')} m`;
+ return 'Sin configurar';
+}
+
+function terrainSize(){
+ const t=project.terrain||{};
+ if(t.mode==='own') return {w:Math.max(.1,Number(t.width||0)),h:Math.max(.1,Number(t.length||0))};
+ if(t.mode==='buy'){
+   const area=Math.max(.1,Number(t.area||0));
+   // Para poder dibujar el límite usando solo los m² indicados,
+   // se representa la parcela como un cuadrado equivalente.
+   const side=Math.sqrt(area);
+   return {w:side,h:side};
+ }
+ return null;
+}
+function terrainBounds(){
+ const z=terrainSize();
+ return z ? {minx:0,miny:0,maxx:z.w,maxy:z.h,w:z.w,h:z.h} : null;
+}
+function clampPoint(p){
+ const b=terrainBounds();
+ if(!b) return {x:p.x,y:p.y};
+ return {x:Math.max(b.minx,Math.min(b.maxx,p.x)),y:Math.max(b.miny,Math.min(b.maxy,p.y))};
+}
+function pointInTerrain(p){
+ const b=terrainBounds();
+ return !b || (p.x>=b.minx && p.x<=b.maxx && p.y>=b.miny && p.y<=b.maxy);
+}
+function fitObjectToTerrain(o){
+ const b=terrainBounds();
+ if(!b) return true;
+ if(o.x!=null){
+   const w=Math.max(.1,Number(o.w||1)), h=Math.max(.1,Number(o.h||1));
+   if(w>b.w || h>b.h) return false;
+   o.x=Math.max(b.minx+w/2,Math.min(b.maxx-w/2,Number(o.x)||0));
+   o.y=Math.max(b.miny+h/2,Math.min(b.maxy-h/2,Number(o.y)||0));
+   return true;
+ }
+ if(o.x1!=null){
+   const a=clampPoint({x:Number(o.x1)||0,y:Number(o.y1)||0});
+   const c=clampPoint({x:Number(o.x2)||0,y:Number(o.y2)||0});
+   o.x1=a.x;o.y1=a.y;o.x2=c.x;o.y2=c.y;
+   return true;
+ }
+ return true;
+}
+function objectFitsTerrain(o){
+ const b=terrainBounds();
+ if(!b) return true;
+ if(o.x!=null){
+   const w=Math.max(.1,Number(o.w||1)), h=Math.max(.1,Number(o.h||1));
+   return w<=b.w && h<=b.h &&
+     o.x-w/2>=b.minx && o.x+w/2<=b.maxx &&
+     o.y-h/2>=b.miny && o.y+h/2<=b.maxy;
+ }
+ if(o.x1!=null){
+   return pointInTerrain({x:o.x1,y:o.y1}) && pointInTerrain({x:o.x2,y:o.y2});
+ }
+ return true;
+}
+function clampDragPoint(p){
+ const q=clampPoint(p);
+ return {x:snapM(q.x),y:snapM(q.y)};
+}
+function validateCurrentFloor(){
+ const b=terrainBounds();
+ if(!b) return;
+ cur().forEach(o=>fitObjectToTerrain(o));
+}
+function updateTerrainUI(){
+ document.getElementById('terrainSummary').textContent=terrainLabel();
+}
+function saveTerrain(){
+ if(!terrainDraft || !terrainDraft.mode){toastMsg('Elige una opción de terreno');return}
+ saveHist();
+ project.terrain=terrainDraft;
+ validateCurrentFloor();
+ persist();terrainClose();updateTerrainUI();showProps();updateBudget();draw();toastMsg('Terreno guardado · límites aplicados');
+}
+
+const CATALOG_UI=[
+ {id:'construction',label:'Construcción',items:[
+  ['wall','Pared','🧱','Por metro','55 €/m'],['room','Habitación','▧','Por m²','35 €/m²'],
+  ['door','Puerta','🚪','Por unidad','250 €/ud'],['window','Ventana','🪟','Por unidad','180 €/ud'],
+  ['stairs','Escalera','🪜','Por unidad','2.200 €/ud']]},
+ {id:'living',label:'Salón y comedor',items:[
+  ['sofa','Sofá','🛋️','Por unidad','750 €/ud'],['table','Mesa','🍽️','Por unidad','220 €/ud']]},
+ {id:'bedroom',label:'Dormitorio',items:[
+  ['bed','Cama','🛏️','Por unidad','500 €/ud'],['wardrobe','Armario','🚪','Por unidad','900 €/ud']]},
+ {id:'kitchen',label:'Cocina y baño',items:[
+  ['kitchen','Cocina','🍳','Por unidad','6.500 €/ud'],['bath','Baño','🚿','Por unidad','4.200 €/ud']]},
+ {id:'exterior',label:'Exterior',items:[
+  ['pool','Piscina','🏊','Por unidad','12.000 €/ud'],['terrace','Terraza','▱','Por m²','90 €/m²'],
+  ['garage','Garaje','🚗','Por unidad','7.500 €/ud'],['garden','Jardín','🌿','Por m²','35 €/m²']]}
+];
+let catalogCategory='all';
+function catalogOpen(){document.getElementById('catalogDrawer').classList.add('open');document.getElementById('catalogDrawer').setAttribute('aria-hidden','false');renderCatalog();setTimeout(()=>document.getElementById('catalogSearch').focus(),80)}
+function catalogClose(){document.getElementById('catalogDrawer').classList.remove('open');document.getElementById('catalogDrawer').setAttribute('aria-hidden','true')}
+function catalogSvg(type){
+const s=(b)=>`<svg viewBox="0 0 120 76" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${b}</svg>`;
+const f='<path d="M10 65h100" stroke="#cbd5e1"/>';
+const m={
+sofa:f+'<rect x="20" y="32" width="80" height="26" rx="7" fill="#dbe4ef"/><rect x="25" y="22" width="28" height="25" rx="6" fill="#cbd8e7"/><rect x="67" y="22" width="28" height="25" rx="6" fill="#cbd8e7"/>',
+bed:f+'<rect x="20" y="20" width="80" height="40" rx="5" fill="#eef2f6"/><path d="M20 42h80"/><rect x="27" y="24" width="27" height="13" rx="4" fill="#d9e2ec"/><rect x="62" y="24" width="27" height="13" rx="4" fill="#d9e2ec"/>',
+table:f+'<ellipse cx="60" cy="31" rx="36" ry="15" fill="#eadfce"/><path d="M42 39l-7 26M78 39l7 26M60 45v20"/>',
+kitchen:f+'<rect x="12" y="22" width="96" height="38" rx="3" fill="#eee8dc"/><path d="M12 34h96M31 22v38M60 22v38M87 22v38"/><circle cx="44" cy="28" r="3"/><circle cx="73" cy="28" r="3"/>',
+bath:f+'<rect x="18" y="34" width="45" height="22" rx="10" fill="#dbeafe"/><ellipse cx="83" cy="42" rx="14" ry="11" fill="#fff"/><path d="M76 31v-9h12v9M88 22h7"/>',
+wardrobe:f+'<rect x="28" y="10" width="64" height="55" rx="3" fill="#e7dfd4"/><path d="M60 10v55M55 38h2M63 38h2"/>',
+door:'<rect x="38" y="8" width="44" height="58" fill="#e8dccb"/><circle cx="73" cy="38" r="2.5" fill="#475467"/>',
+window:'<rect x="22" y="13" width="76" height="50" rx="2" fill="#dff2fb"/><path d="M60 13v50M22 38h76"/>',
+stairs:'<path d="M18 63h84V53H88V43H74V33H60V23H46V13H32" fill="#e5e7eb"/>',
+pool:'<rect x="13" y="15" width="94" height="48" rx="10" fill="#bfe3f2"/><path d="M23 30c8-8 16 8 24 0s16 8 24 0 16 8 24 0M23 48c8-8 16 8 24 0s16 8 24 0 16 8 24 0" stroke="#6bb6d3"/>',
+terrace:f+'<path d="M18 22h84v40H18z" fill="#e8e0d3"/><path d="M18 32h84M18 42h84M18 52h84M38 22v40M58 22v40M78 22v40"/>',
+garage:'<rect x="17" y="13" width="86" height="52" rx="3" fill="#e5e7eb"/><path d="M25 25h70M25 35h70M25 45h70M25 55h70M37 13v52M49 13v52M61 13v52M73 13v52M85 13v52"/>',
+garden:'<path d="M15 61h90"/><path d="M25 61c0-20 8-28 16-28s16 8 16 28M68 61c0-15 7-22 14-22s14 7 14 22" fill="#dcefd8"/><circle cx="41" cy="16" r="8" fill="#b9d8ae"/><circle cx="82" cy="21" r="8" fill="#b9d8ae"/>',
+wall:'<path d="M14 61V15h92v46z" fill="#e7e5e4"/><path d="M14 28h92M14 42h92M14 54h92M37 15v13M60 15v13M83 15v13M25 28v14M48 28v14M71 28v14M94 28v14"/>',
+room:'<path d="M18 60V16h84v44z" fill="#eef4fb"/><path d="M18 48h84M38 16v32M75 16v32"/><rect x="25" y="23" width="24" height="17" rx="2" fill="#d9e2ec"/>'
+};
+return s(m[type]||f+'<rect x="25" y="20" width="70" height="35" rx="7" fill="#e5e7eb"/>');
+}
+
+function renderCatalog(){
+ const tabs=document.getElementById('catalogTabs'),body=document.getElementById('catalogBody'),q=(document.getElementById('catalogSearch').value||'').trim().toLowerCase();
+ const all=[['all','Todo']];
+ CATALOG_UI.forEach(s=>all.push([s.id,s.label]));
+ tabs.innerHTML=all.map(([id,label])=>`<button class="${catalogCategory===id?'active':''}" data-cat="${id}">${label}</button>`).join('');
+ tabs.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{catalogCategory=b.dataset.cat;renderCatalog()});
+ let sections=CATALOG_UI.filter(s=>catalogCategory==='all'||s.id===catalogCategory).map(s=>({...s,items:s.items.filter(i=>!q||i[1].toLowerCase().includes(q))})).filter(s=>s.items.length);
+ if(!sections.length){body.innerHTML='<div class="catalog-empty">No encuentro ese elemento.<br>Prueba con “sofá”, “cama”, “cocina” o “puerta”.</div>';return}
+ body.innerHTML=sections.map(s=>`<section><div class="catalog-section-title"><b>${s.label}</b><span>${s.items.length} elementos</span></div><div class="catalog-grid">${s.items.map(i=>{
+   const price=getPrice({type:i[0]}); const unit=CATALOG[i[0]].unit;
+   return `<button class="catalog-item" data-add="${i[0]}"><div class="catalog-thumb">${catalogSvg(i[0])}</div><div class="catalog-meta"><div class="catalog-name">${i[1]}</div><div class="catalog-sub">${i[3]}</div><div class="catalog-price">${money(price)}/${unit}</div></div></button>`;
+ }).join('')}</div></section>`).join('');
+ body.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{setTool(b.dataset.add);catalogClose();toastMsg('Ahora toca el plano para colocar '+TYPES[b.dataset.add])});
+}
+
+document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+c.onpointerdown=pointerDown;c.onpointermove=pointerMove;c.onpointerup=pointerUp;c.onpointercancel=()=>drag=null;window.onresize=resize;
+
+
+document.getElementById('editTerrain').onclick=terrainOpen;
+document.getElementById('terrainBuy').onclick=()=>{terrainDraft=terrainDraft||{};terrainDraft.mode='buy';terrainDraft.pricePerM2=MURCIA_LAND_REFERENCE;if(!terrainDraft.area)terrainDraft.area=150;terrainRender()};
+document.getElementById('terrainOwn').onclick=()=>{terrainDraft=terrainDraft||{};terrainDraft.mode='own';terrainRender()};
+document.getElementById('terrainCancel').onclick=terrainClose;
+document.getElementById('terrainSave').onclick=saveTerrain;
+
+document.getElementById('catalogTop').onclick=catalogOpen;
+document.getElementById('catalogClose').onclick=catalogClose;
+document.getElementById('catalogSearch').oninput=renderCatalog;
+
+document.getElementById('undo').onclick=undo;document.getElementById('redo').onclick=redo;document.getElementById('save').onclick=saveNow;
+document.getElementById('clear').onclick=()=>{if(confirm('¿Limpiar esta planta?'))clearAll()};
+document.getElementById('floorBtn').onclick=showFloors;document.getElementById('openBudget').onclick=showBudget;document.getElementById('budgetTop').onclick=showBudget;
+document.getElementById('view2d').onclick=()=>{view='2d';document.getElementById('view2d').classList.add('active');document.getElementById('view3d').classList.remove('active');hint.textContent='Vista 2D: construye y coloca objetos.';draw()};
+document.getElementById('view3d').onclick=()=>{view='3d';document.getElementById('view3d').classList.add('active');document.getElementById('view2d').classList.remove('active');hint.textContent='Vista 3D: comprueba el volumen de tu casa.';draw()};
+document.getElementById('walk').onclick=()=>{view='3d';document.getElementById('view3d').classList.add('active');document.getElementById('view2d').classList.remove('active');toastMsg('Vista 3D activada');draw()};
+document.getElementById('more').onclick=showBudget;
+modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});
+load();project.terrain=project.terrain||{mode:null,area:0,width:0,length:0,pricePerM2:MURCIA_LAND_REFERENCE};updateTerrainUI();renderCatalog();document.getElementById('floorBtn').textContent=project.floors[floor].name;showProps();updateBudget();resize();
+})();
+</script></body></html>
